@@ -1,6 +1,6 @@
-cmake-build-debug/
-cmake-build-release/
-cmake-build-vs/
+cmake-build-*/
+cmake-clang-*/
+cmake-gcc-*/
 build/releases
 *.received.*
 .idea
@@ -8,3 +8,13 @@ doc/html/
 .vs/
 /.vscode/
 *.runsettings
+CMakeLists.txt.user
+*.bak
+*.source.md-e
+.DS_Store
+[Oo]ut/build
+*.swp
+/CMakeSettings.json
+__pycache__/
+.mypy_cache/
+*.sqlite3

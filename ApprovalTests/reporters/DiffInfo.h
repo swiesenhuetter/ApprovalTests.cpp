@@ -1,50 +1,90 @@
-#ifndef APPROVALTESTS_CPP_DIFFINFO_H
-#define APPROVALTESTS_CPP_DIFFINFO_H
+#pragma once
 
 #include <string>
-#include "../FileUtils.h"
-#include "../StringUtils.h"
+#include <utility>
+#include <vector>
+#include "ApprovalTests/utilities/FileUtils.h"
+#include "ApprovalTests/utilities/StringUtils.h"
+#include "ApprovalTests/utilities/SystemUtils.h"
 
-enum class Type { TEXT, IMAGE, TEXT_AND_IMAGE };
-
-
-
-struct DiffInfo
+namespace ApprovalTests
 {
-    DiffInfo(std::string program, Type type) :
-        program(program),
-        arguments("%s %s"),
-        type(type)
+    enum class Type
     {
-    }
-    DiffInfo(std::string program, std::string arguments, Type type) :
-        program(program),
-        arguments(arguments),
-        type(type)
-    {
-    }
-    std::string program;
-    std::string arguments;
-    Type type;
+        TEXT,
+        IMAGE,
+        TEXT_AND_IMAGE
+    };
 
-    std::string getProgramForOs() const
+    struct DiffInfo
     {
-       
-        std::string result = program;
-        if (result.rfind("{ProgramFiles}", 0) == 0) {
-            auto result1 = StringUtils::replaceAll(result, "{ProgramFiles}", "c:\\Program Files\\");
-       
-            if (FileUtils::fileExists(result1)) {
-                result = result1;
-            }
-            auto result2 = StringUtils::replaceAll(result, "{ProgramFiles}", "c:\\Program Files (x86)\\");
-            if (FileUtils::fileExists(result2)) {
-                result =  result2;
-            }
+        static std::string receivedFileTemplate()
+        {
+            return "{Received}";
         }
-        return result;
-    }
-};
 
+        static std::string approvedFileTemplate()
+        {
+            return "{Approved}";
+        }
 
-#endif //APPROVALTESTS_CPP_DIFFINFO_H
+        static std::string programFileTemplate()
+        {
+            return "{ProgramFiles}";
+        }
+
+        static std::string getDefaultArguments()
+        {
+            return receivedFileTemplate() + ' ' + approvedFileTemplate();
+        }
+
+        DiffInfo(std::string program_, Type type_)
+            : program(std::move(program_)), arguments(getDefaultArguments()), type(type_)
+        {
+        }
+        DiffInfo(std::string program_, std::string arguments_, Type type_)
+            : program(std::move(program_)), arguments(std::move(arguments_)), type(type_)
+        {
+        }
+        std::string program;
+        std::string arguments;
+        Type type;
+
+        static std::vector<std::string> getProgramFileLocations()
+        {
+            std::vector<std::string> possibleWindowsPaths;
+            const std::vector<const char*> envVars = {
+                "ProgramFiles", "ProgramW6432", "ProgramFiles(x86)"};
+
+            for (const auto& envVar : envVars)
+            {
+                std::string envVarValue = SystemUtils::safeGetEnv(envVar);
+                if (!envVarValue.empty())
+                {
+                    envVarValue += '\\';
+                    possibleWindowsPaths.push_back(envVarValue);
+                }
+            }
+            return possibleWindowsPaths;
+        }
+
+        std::string getProgramForOs() const
+        {
+            std::string result = program;
+            if (result.rfind(programFileTemplate(), 0) == 0)
+            {
+                std::vector<std::string> possibleWindowsPaths = getProgramFileLocations();
+                for (const auto& path : possibleWindowsPaths)
+                {
+                    auto result1 =
+                        StringUtils::replaceAll(result, programFileTemplate(), path);
+                    if (FileUtils::fileExists(result1))
+                    {
+                        return result1;
+                    }
+                }
+            }
+            return result;
+        }
+    };
+}

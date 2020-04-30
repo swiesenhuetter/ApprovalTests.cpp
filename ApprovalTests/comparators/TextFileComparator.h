@@ -1,41 +1,44 @@
-#ifndef APPROVALTESTS_CPP_TEXTFILECOMPARATOR_H
-#define APPROVALTESTS_CPP_TEXTFILECOMPARATOR_H
+#pragma once
 
-#include "ApprovalComparator.h"
+#include "ApprovalTests/core/ApprovalComparator.h"
 
-class TextFileComparator : public ApprovalComparator
+namespace ApprovalTests
 {
-public:
-    static std::ifstream::int_type getNextRelevantCharacter(std::ifstream& astream)
+    class TextFileComparator : public ApprovalComparator
     {
-        auto ch = astream.get();
-        if (ch == '\r')
+    public:
+        static std::ifstream::int_type getNextRelevantCharacter(std::ifstream& astream)
         {
-            return astream.get();
-        }
-        else
-        {
-            return ch;
-        }
-    }
-
-    virtual bool contentsAreEquivalent(std::string receivedPath,
-                                       std::string approvedPath) const
-    {
-        std::ifstream astream(approvedPath.c_str(),
-                              std::ios::binary | std::ifstream::in);
-        std::ifstream rstream(receivedPath.c_str(),
-                              std::ios::binary | std::ifstream::in);
-
-        while (astream.good() && rstream.good()) {
-            int a = getNextRelevantCharacter(astream);
-            int r = getNextRelevantCharacter(rstream);
-
-            if (a != r) {
-                return false;
+            auto ch = astream.get();
+            if (ch == '\r')
+            {
+                return astream.get();
+            }
+            else
+            {
+                return ch;
             }
         }
-        return true;
-    }
-};
-#endif //APPROVALTESTS_CPP_TEXTFILECOMPARATOR_H
+
+        virtual bool contentsAreEquivalent(std::string receivedPath,
+                                           std::string approvedPath) const override
+        {
+            std::ifstream astream(approvedPath.c_str(),
+                                  std::ios::binary | std::ifstream::in);
+            std::ifstream rstream(receivedPath.c_str(),
+                                  std::ios::binary | std::ifstream::in);
+
+            while (astream.good() && rstream.good())
+            {
+                int a = getNextRelevantCharacter(astream);
+                int r = getNextRelevantCharacter(rstream);
+
+                if (a != r)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    };
+}

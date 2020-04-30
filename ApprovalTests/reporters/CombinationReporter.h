@@ -1,33 +1,34 @@
-#ifndef CATCHPLAYGROUND_COMBINATIONREPORTER_H
-#define CATCHPLAYGROUND_COMBINATIONREPORTER_H
+#pragma once
 
-#include "Reporter.h"
+#include "ApprovalTests/core/Reporter.h"
 #include <memory>
 #include <vector>
 
-class CombinationReporter : public Reporter
+namespace ApprovalTests
 {
-private:
-    std::vector< std::unique_ptr<Reporter> > reporters;
-public:
-    // Note that CombinationReporter takes ownership of the given Reporter objects
-    CombinationReporter(std::vector<Reporter*> theReporters)
+    class CombinationReporter : public Reporter
     {
-        for(auto r : theReporters)
-        {
-            reporters.push_back(std::unique_ptr<Reporter>(r));
-        }
-    }
+    private:
+        std::vector<std::unique_ptr<Reporter>> reporters;
 
-    bool report(std::string received, std::string approved) const override
-    {
-        bool result = false;
-        for(auto& r : reporters)
+    public:
+        // Note that CombinationReporter takes ownership of the given Reporter objects
+        explicit CombinationReporter(const std::vector<Reporter*>& theReporters)
         {
-            result |= r->report(received, approved);
+            for (auto r : theReporters)
+            {
+                reporters.push_back(std::unique_ptr<Reporter>(r));
+            }
         }
-        return result;
-    }
-};
 
-#endif //CATCHPLAYGROUND_COMBINATIONREPORTER_H
+        bool report(std::string received, std::string approved) const override
+        {
+            bool result = false;
+            for (auto& r : reporters)
+            {
+                result |= r->report(received, approved);
+            }
+            return result;
+        }
+    };
+}

@@ -1,18 +1,16 @@
-#ifndef CATCHPLAYGROUND_QUIETREPORTER_H
-#define CATCHPLAYGROUND_QUIETREPORTER_H
+#pragma once
 
-#include "Reporter.h"
-#include <memory>
-#include <vector>
+#include "ApprovalTests/core/Reporter.h"
 
-// A reporter that does nothing. Failing tests will still fail, but nothing will be launched.
-class QuietReporter : public Reporter
+namespace ApprovalTests
 {
-public:
-    bool report(std::string received, std::string approved) const override
+    // A reporter that does nothing. Failing tests will still fail, but nothing will be launched.
+    class QuietReporter : public Reporter
     {
-        return true;
-    }
-};
-
-#endif //CATCHPLAYGROUND_QUIETREPORTER_H
+    public:
+        bool report(std::string /*received*/, std::string /*approved*/) const override
+        {
+            return true;
+        }
+    };
+}

@@ -1,103 +1,192 @@
-#ifndef APPROVALTESTNAMER_H
-#define APPROVALTESTNAMER_H
+#pragma once
 
-#include "ApprovalNamer.h"
-#include <stack>
+#include "ApprovalTests/core/ApprovalNamer.h"
 #include <sstream>
 #include <vector>
-#include "../Macros.h"
-#include "../SystemUtils.h"
+#include <stdexcept>
+#include "ApprovalTests/utilities/SystemUtils.h"
+#include "ApprovalTests/namers/HelpMessages.h"
 
-using std::string;
-
-class TestName {
-public:
-    const string& getFileName() const {
-        return fileName;
-    }
-
-    void setFileName(const string &fileName) {
-        TestName::fileName = SystemUtils::checkFilenameCase(fileName);
-    }
-
-    std::vector<string> sections;
-private:
-    string fileName;
-};
-
-class ApprovalTestNamer : public ApprovalNamer {
-private:
-public:
-    ApprovalTestNamer() {
-    }
-
-    string getTestName() {
-        std::stringstream ext;
-        auto test = currentTest();
-        for (size_t i = 0; i < test.sections.size(); i++) {
-            if (0 < i) {
-                ext << ".";
-            }
-            ext << test.sections[i];
-        }
-
-        return convertToFileName(ext.str());
-    }
-
-    static bool isForbidden(char c)
+namespace ApprovalTests
+{
+    class TestName
     {
-        static std::string forbiddenChars("\\/:?\"<>|' ");
-        return std::string::npos != forbiddenChars.find(c);
-    }
-
-    static string convertToFileName(const string& fileName)
-    {
-        std::stringstream result;
-        for (auto ch : fileName)
+    public:
+        const std::string& getFileName() const
         {
-            if (!isForbidden(ch))
+            checkBuildConfiguration(fileName);
+            return fileName;
+        }
+
+        void setFileName(const std::string& file)
+        {
+            fileName = SystemUtils::checkFilenameCase(file);
+        }
+
+    private:
+        static void checkBuildConfiguration(const std::string& fileName)
+        {
+            if (!FileUtils::fileExists(fileName))
             {
-                result << ch;
-            }
-            else
-            {
-                result << "_";
+                throw std::runtime_error(getMisconfiguredBuildHelp(fileName));
             }
         }
-        return result.str();
-    }
 
-    string getFileName() {
-        auto file = currentTest().getFileName();
-        auto start = file.rfind(SystemUtils::getDirectorySeparator()) + 1;
-        auto end = file.rfind(".");
-        auto fileName = file.substr(start, end - start);
-        return convertToFileName(fileName);
-    }
+    public:
+        static std::string getMisconfiguredBuildHelp(const std::string& fileName)
+        {
+            return "\n\n" + HelpMessages::getMisconfiguredBuildHelp(fileName) + "\n\n";
+        }
 
-    string getDirectory() {
-        auto file = currentTest().getFileName();
-        auto end = file.rfind(SystemUtils::getDirectorySeparator()) + 1;
-        return file.substr(0, end);
-    }
+        std::vector<std::string> sections;
 
-    STATIC(TestName, currentTest, NULL)
+    private:
+        std::string fileName;
+    };
 
-    virtual string getApprovedFile(string extensionWithDot) {
+    class TestConfiguration
+    {
+    public:
+        std::string subdirectory;
+    };
 
-        return getFullFileName(".approved", extensionWithDot);
-    }
+    class ApprovalTestNamer : public ApprovalNamer
+    {
+    private:
+    public:
+        ApprovalTestNamer() = default;
 
-    virtual string getReceivedFile(string extensionWithDot) {
+        std::string getTestName() const
+        {
+            std::stringstream ext;
+            auto test = getCurrentTest();
+            for (size_t i = 0; i < test.sections.size(); i++)
+            {
+                if (0 < i)
+                {
+                    ext << ".";
+                }
+                ext << test.sections[i];
+            }
 
-        return getFullFileName(".received", extensionWithDot);
-    }
+            return convertToFileName(ext.str());
+        }
 
-    string getFullFileName(string approved, string extensionWithDot) {
-        std::stringstream ext;
-        ext << getDirectory() << getFileName() << "." << getTestName() << approved << extensionWithDot;
-        return ext.str();
-    }
-};
+        static bool isForbidden(char c)
+        {
+            static std::string forbiddenChars("\\/:?\"<>|' ");
+            return std::string::npos != forbiddenChars.find(c);
+        }
 
-#endif
+        static std::string convertToFileName(const std::string& fileName)
+        {
+            std::stringstream result;
+            for (auto ch : fileName)
+            {
+                if (!isForbidden(ch))
+                {
+                    result << ch;
+                }
+                else
+                {
+                    result << "_";
+                }
+            }
+            return result.str();
+        }
+
+        static TestName& getCurrentTest()
+        {
+            try
+            {
+                return currentTest();
+            }
+            catch (const std::runtime_error&)
+            {
+                std::string helpMessage = getMisconfiguredMainHelp();
+                throw std::runtime_error(helpMessage);
+            }
+        }
+
+        static std::string getMisconfiguredMainHelp()
+        {
+            return "\n\n" + HelpMessages::getMisconfiguredMainHelp() + "\n\n";
+        }
+
+        // Deprecated - please use getSourceFileName
+        std::string getFileName() const
+        {
+            return getSourceFileName();
+        }
+
+        std::string getSourceFileName() const
+        {
+            auto file = getCurrentTest().getFileName();
+            auto start = file.rfind(SystemUtils::getDirectorySeparator()) + 1;
+            auto end = file.rfind('.');
+            auto fileName = file.substr(start, end - start);
+            return convertToFileName(fileName);
+        }
+
+        std::string getDirectory() const
+        {
+            auto file = getCurrentTest().getFileName();
+            auto end = file.rfind(SystemUtils::getDirectorySeparator()) + 1;
+            auto directory = file.substr(0, end);
+            if (!testConfiguration().subdirectory.empty())
+            {
+                directory += testConfiguration().subdirectory +
+                             SystemUtils::getDirectorySeparator();
+                SystemUtils::ensureDirectoryExists(directory);
+            }
+            return directory;
+        }
+
+        static TestName& currentTest(TestName* value = nullptr)
+        {
+            static TestName* staticValue;
+            if (value != nullptr)
+            {
+                staticValue = value;
+            }
+            if (staticValue == nullptr)
+            {
+                throw std::runtime_error(
+                    "The variable in currentTest() is not initialised");
+            }
+            return *staticValue;
+        }
+
+        static TestConfiguration& testConfiguration()
+        {
+            static TestConfiguration configuration;
+            return configuration;
+        }
+
+        virtual std::string getApprovedFile(std::string extensionWithDot) const override
+        {
+
+            return getFullFileName(".approved", extensionWithDot);
+        }
+
+        virtual std::string getReceivedFile(std::string extensionWithDot) const override
+        {
+
+            return getFullFileName(".received", extensionWithDot);
+        }
+
+        std::string getOutputFileBaseName() const
+        {
+            return getSourceFileName() + "." + getTestName();
+        }
+
+        std::string getFullFileName(const std::string& approved,
+                                    const std::string& extensionWithDot) const
+        {
+            std::stringstream ext;
+            ext << getDirectory() << getOutputFileBaseName() << approved
+                << extensionWithDot;
+            return ext.str();
+        }
+    };
+}

@@ -1,23 +1,20 @@
-#ifndef DIFFREPORTER_H
-#define DIFFREPORTER_H
+#pragma once
 
 #include "FirstWorkingReporter.h"
 #include "WindowsReporters.h"
 #include "MacReporters.h"
 #include "LinuxReporters.h"
 
-class DiffReporter : public FirstWorkingReporter
+namespace ApprovalTests
 {
-public:
-    DiffReporter() : FirstWorkingReporter(
-            {
-                    new Mac::MacDiffReporter(),
-                    new Linux::LinuxDiffReporter(),
-                    new Windows::WindowsDiffReporter()
-            }
-    )
+    class DiffReporter : public FirstWorkingReporter
     {
-    }
-};
-
-#endif //DIFFREPORTER_H
+    public:
+        DiffReporter()
+            : FirstWorkingReporter({new Mac::MacDiffReporter(),
+                                    new Linux::LinuxDiffReporter(),
+                                    new Windows::WindowsDiffReporter()})
+        {
+        }
+    };
+}

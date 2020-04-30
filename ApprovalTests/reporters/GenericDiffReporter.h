@@ -1,17 +1,27 @@
-#ifndef APPROVALTESTS_CPP_GENERICDIFFREPORTER_H
-#define APPROVALTESTS_CPP_GENERICDIFFREPORTER_H
+#pragma once
 
 #include "DiffPrograms.h"
 #include "CommandReporter.h"
-#include "SystemLauncher.h"
+#include "ApprovalTests/launchers/SystemLauncher.h"
+#include <string>
+#include <vector>
 
-class GenericDiffReporter : public CommandReporter {
-private:
-    SystemLauncher launcher;
+namespace ApprovalTests
+{
+    class GenericDiffReporter : public CommandReporter
+    {
+    public:
+        SystemLauncher launcher;
 
-public:
-    GenericDiffReporter(const std::string& program) : CommandReporter(program, &launcher) {};
-    GenericDiffReporter(const DiffInfo& info) : CommandReporter(info.getProgramForOs().c_str(), &launcher) {};
-};
+    public:
+        explicit GenericDiffReporter(const std::string& program)
+            : CommandReporter(program, &launcher)
+        {
+        }
 
-#endif //APPROVALTESTS_CPP_GENERICDIFFREPORTER_H
+        explicit GenericDiffReporter(const DiffInfo& info)
+            : CommandReporter(info.getProgramForOs(), info.arguments, &launcher)
+        {
+        }
+    };
+}

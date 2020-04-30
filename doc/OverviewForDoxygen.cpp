@@ -8,7 +8,6 @@
  - \ref overview
  - \ref supported_test_frameworks
  - \ref verification
-     - \ref custom_comparators
  - \ref reporters
      - \ref reporters_overview
      - \ref custom_reporters
@@ -39,7 +38,7 @@
 
  The following test frameworks are currently supported, via these files:
 
- - <a href="https://github.com/catchorg/Catch2">Catch 1 and 2</a>: Catch2Approvals.h
+ - <a href="https://github.com/catchorg/Catch2">Catch2</a>: Catch2Approvals.h
  - <a href="https://github.com/google/googletest">Google Test</a>: GoogleTestApprovals.h
  - <a href="https://github.com/JayBazuzi/Okra">Okra</a>: OkraApprovals.h
 
@@ -59,18 +58,13 @@
     - The way that a difference in file-content is conveyed by FileApprover to the test framework (Catch, Google Test etc) is by
       the throwing of an exception. The test framework then picks up that exception, and reports it as a
       failure.
-    - This means that, currently, it's only possible for a single verification failure to easily be reported
+    - This means that, currently, it's only possible for a single verification failure per test case to easily be reported
       by the test framework.
     - A test that wanted to run multiple verifications could catch ApprovalException, note the failure, keep on
       testing, and then at the end of the test method, call the test frameworks's specific mechanism to report
       the failure(s).
 
- \subsection custom_comparators Custom Comparators
 
- - The conventional way to use Approvals is by converting the objects being tested to strings, and approving
-   the string representations. See StringWriter.
- - See ApprovalComparator and FileApprover::registerComparator() if you wish to customise the way that
-   file contents are compared.
 
  \section reporters Reporters
 
@@ -99,7 +93,7 @@
  - QuietReporter is a reporter that does nothing. Failing tests will still fail,
    but nothing will be launched.
  - If there is a differencing tool that you have installed, and that is not pre-defined
-   by this library, you can look CommandLauncher and CommandReporter, to construct your own
+   by this library, you can look at CommandLauncher and CommandReporter, to construct your own
    reporter object.
 
  \subsection reporters_implementation Implementation of Reporters
@@ -133,7 +127,7 @@
     - Could be moved to writers folder
  - ExistingFile is a special-case writer
     - This is really an implementation detail of Approvals::verifyExistingFile()
-    - It would be good to have a way to optionally tell ExistingFile::CleanUpReceived() to
+    - It would be good to have a way to optionally tell ExistingFile::cleanUpReceived() to
       remove the received file.
 
  \section utilities Implementation Detail: Utilities
@@ -145,8 +139,6 @@
 
  \section tests Tests of Approvals itself
 
- - ApprovalTests_Catch1_Tests
-    - Tests integration with Catch1
  - ApprovalTests_Catch2_Tests
     - Tests both Approvals.cpp and its integration with Catch2
     - Would be good to add new sub-directories 'namers' and 'writers', to make structure consistent with that if
